@@ -6,3 +6,4 @@ Trying to merge opendocman dms with mx_graph. Target is to have a fully function
 Just started this project and did almost no changes.
 
 In case of any questions - feel free to contact hschroefl@farbpfeil.de
+
