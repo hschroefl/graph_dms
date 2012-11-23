@@ -1,0 +1,396 @@
+<?
+/******************************************************************************
+Epiware: Project and Document Management
+http://www.epiware.com
+Copyright (C) 2006 James Kern
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version. 
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details. 
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+Epiware, Inc. and Praxis Inc, hereby disclaims all copyright
+interest in the program 'Epiware' written
+by James Kern, Edward Kline, Ryan Gilfether, Ray Gorospe, Patrick Waddingham
+
+06 September 2006
+James Kern, President of Epiware 
+Jack Chapman, President of Praxis
+*****************************************************************************/ 
+function set_flags($column,$flags)
+{	
+	
+	if($column != "")
+	{
+		$base_num["ref_num"] = 0xFFFC;
+		$base_num["subject"] = 0xFFF3;
+		$base_num["user_id"] = 0xFFCF;
+		$base_num["status"] = 0xFF3F;
+		$base_num["assign_id"] = 0xFCFF;
+		$base_num["assign_date"] = 0xF3FF;
+		$base_num["due_date"] = 0xCFFF;
+	
+		$shift["ref_num"] = 0;
+		$shift["subject"] = 2;
+		$shift["user_id"] = 4;
+		$shift["status"] = 6;
+		$shift["assign_id"] = 8;
+		$shift["assign_date"] = 10;
+		$shift["due_date"] = 12;
+
+		//shift right until is on the end
+		$temp_flags = $flags >> $shift[$column];
+
+
+		//get just this flag
+		$temp_flags = $temp_flags & 3;
+
+
+		//add one to flag
+		if($temp_flags == 1)
+			$add = 2;
+		else
+			$add = 1;
+		$temp_flags = $temp_flags + $add;
+
+		//make sure it doesn't "spill over
+		$temp_flags = $temp_flags & 0x0003;
+
+		//shift back to left
+		$temp_flags = $temp_flags << $shift[$column];
+
+		//clear out flag spot on original
+		$flags = $flags & $base_num[$column];
+
+		//put in the new flags
+		$flags = $flags | $temp_flags;
+
+	}//end of if column not empty
+	return $flags;
+}
+
+
+function update_order($order,$column,$flags)
+{
+	$shift["ref_num"] = 0;
+	$shift["subject"] = 2;
+	$shift["user_id"] = 4;
+	$shift["status"] = 6;
+	$shift["assign_id"] = 8;
+	$shift["assign_date"] = 10;
+	$shift["due_date"] = 12;
+
+		//get action for column
+		$num_shift = $shift[$column];
+
+		$temp_flags = $flags >> $num_shift;
+	
+		$temp_flags = $temp_flags & 3;
+	
+		
+		if($temp_flags != 0)
+		{
+	
+			if(!ereg($column,$order)) 
+			{
+				if($order == "")
+				{
+					$order .= $column;
+				}
+				else
+				{
+					$order .= ",".$column;
+				}
+			}
+		}
+		else
+		{
+	
+			if( ($order!="") && (ereg($column,$order)) )
+			{
+				$pattern = ",".$column;
+				$pattern1 = $column.",";
+				if(ereg($pattern,$order))
+				{
+					$order = ereg_replace(",".$column,"",$order);
+				}
+				else if(ereg($pattern1,$order))
+				{
+					$order = ereg_replace($column.",","",$order);
+				}
+				else
+				{
+					$order = ereg_replace($column,"",$order);
+				}
+			}
+		}
+		return $order;
+}
+
+function build_order_string($order_string,$flags)
+{
+	$sql = "";
+	if($order_string != "")
+	{
+		$column_id[0] = "ref_num";
+		$column_id[1] = "subject";
+		$column_id[2] = "user_id";
+		$column_id[3] = "status";
+		$column_id[4] = "assign_id";
+		$column_id[5] = "assign_date";
+		$column_id[6] = "due_date";
+
+		$shift["ref_num"] = 0;
+		$shift["subject"] = 2;
+		$shift["user_id"] = 4;
+		$shift["status"] = 6;
+		$shift["assign_id"] = 8;
+		$shift["assign_date"] = 10;
+		$shift["due_date"] = 12;
+		
+		
+		if(ereg(",",$order_string))
+		{
+			$order_array = explode(",",$order_string);
+		}
+		else
+		{
+			$order_array[] = $order_string;
+		}
+
+		while(list($prop,$val) = each($order_array))
+		{
+			$temp_flags = $flags >> $shift[$val];
+			
+			$temp_flags = $temp_flags & 3;
+
+			if($temp_flags == 1)
+			{
+				$sql_array[] .= $val. " asc";
+			}
+			else if($temp_flags == 3)
+			{
+				$sql_array[] .= $val. " desc";
+			}
+
+		}//end of while loop
+		if(count($sql_array)>1)
+		{
+			$sql = implode(",",$sql_array);
+		}
+		else
+		{
+			$sql = $sql_array[0];
+		}
+	}//end of if not empty string
+	return $sql;
+}//end of function build_order_string;
+
+function get_image_tag($flags,$column)
+{
+	$shift["ref_num"] = 0;
+	$shift["subject"] = 2;
+	$shift["user_id"] = 4;
+	$shift["status"] = 6;
+	$shift["assign_id"] = 8;
+	$shift["assign_date"] = 10;
+	$shift["due_date"] = 12;
+
+	$num_shift = $shift[$column];
+
+	$temp_flag = $flags;
+	if($num_shift > 0)
+	{
+		//shift bits into 2^0 and 2^1's position;
+		$temp_flag = $temp_flag >> $num_shift;
+	}	
+
+	//clear rest of bits..not concerned with
+	$temp_flag = $temp_flag & 3;
+	
+	if($temp_flag == 3)
+	{
+		$answer = "down";
+	}
+	else if($temp_flag == 1)
+	{
+		$answer = "up";
+	}
+	else
+	{
+		$answer = "none";
+	}
+	
+	return $answer;
+}
+
+//function to build sql statement without order by clause
+function get_sql($q_type)
+{
+	$sql = "select a.subject.a.status as status.a.action_id as action_id,date_format(a.due_date,'%y-%b-%d') as due_date,";
+	$sql .= "a.ref_num,a.user_id from adv_action_items a ";
+
+	switch($q_type) {
+       case "0" :  
+          //--------------------
+          // All Incimplete tasks
+          //--------------------
+          $limiting =  " where a.group_id=$group_id  and a.status='OPEN' ";
+          break;
+       case "1" :
+          //--------------------
+          // All tasks assigned to me
+          //--------------------
+          $limiting =  " where a.group_id=$group_id  and a.user_id=$user_id ";
+          break;
+       case "2" :
+          //--------------------
+          // All tasks Ive assigned
+          //--------------------
+          $limiting =  " where a.group_id=$group_id  and a.assign_id=$user_id ";
+          break;
+       case "3" :
+          //--------------------
+          // All overdue tasks
+          //--------------------
+           $myDate = getdate();
+           $current_date =  $myDate[year] . "-" . $myDate[mon] . "-" . $myDate[mday];
+ 
+           $limiting =  " where a.group_id=$group_id  and  a.status='OPEN' and a.due_date > '$current_date' ";
+          break;
+       case "4" :
+          //--------------------
+          // All completed tasks
+          //--------------------
+          $limiting =  " where a.group_id=$group_id  and  a.status='CLOSED'   ";
+          break;
+       case "5" :
+          //--------------------
+          // All tasks
+          //--------------------
+          $limiting =  " where a.group_id=$group_id  and a.assign_id=b.user_id   ";
+          break;
+       default :
+          $limiting =  " where a.group_id=$group_id  and a.status='OPEN' ";   
+    }
+
+	$sql .= $limiting;
+	return $sql;
+}
+//-------------------------------------------------------
+//Function that passes in an e-mail and that e-mail is 
+//searched for to determine if:
+//Exist in Project (user table): A + number is returned
+//Exist as a foreign user (foreign user table): A - number is returned
+//Does not exist: Returns 0
+//---------------------------------------------------------
+
+function is_Forgeign_User ($user_Email,$data_source)
+{
+
+	$valuePossitiveOrNegative = 0;
+
+
+	//SQL select statements
+	$sql_Statement_UsersTable = "SELECT* FROM users WHERE users.email = '$user_Email'";
+	$sql_Statement_ForgeignTable = "SELECT* FROM foreign_users WHERE foreign_users.email = '$user_Email'";
+
+	$resultU = $data_source->perform_looping_query($sql_Statement_UsersTable);
+	$resultF = $data_source->perform_looping_query($sql_Statement_ForgeignTable);
+
+	$RowU = $data_source->get_next_row($resultU);
+	$RowF = $data_source->get_next_row($resultF);
+
+	$emailU = $RowU["email"];
+	$idU = $RowU["user_id"];
+
+	$emailF = $RowF["email"];
+	$idF = $RowF["user_id"];
+
+
+	//If the name exist inside the user table
+	if ($emailU != "")
+			$valuePossitiveOrNegative = $idU;
+
+	//If the name exist inside the foriegn_user table
+	else if ($emailF != "")
+			$valuePossitiveOrNegative = $idF * -1;
+
+	//If the name does not exist anywhere
+	else if ($emailF == "" && $emailU == "")
+			$valuePossitiveOrNegative = 0;
+
+	//Close db
+	//$data_source->disconnect_db();
+
+	return $valuePossitiveOrNegative;
+
+}//close is_Forgeign_User
+
+
+function enter_Foreign_User ($first_Name, $last_Name, $user_Email, $group_id, $data_source)
+{
+
+	$sql_Statement_InsertForeign = "INSERT INTO foreign_users(f_name, l_name, email, group_id) VALUES ('$first_Name', '$last_Name', '$user_Email', $group_id)";
+
+	//Exicute query and insert into foreign_user table
+	$data_source->perform_action_query($sql_Statement_InsertForeign);
+
+	//Gets the id of the record that was just entered
+	$id = $data_source->get_last_id();
+
+	//Makes it a negative number
+	$id = $id * -1;
+
+	//Close db
+	//$data_source->disconnect_db();
+
+	return $id;
+
+}//Close enter_Foreign_User
+
+function get_user_obj($user_id,$db)
+{
+	//returns an object with properties of f_name,l_name, and email
+	
+	if ($user_id > 0)	//the name is stored in the user table
+	{
+		$whichUserTableAs = "users";
+	}
+	else if ($user_id < 0)	//the name is stored in the foreign_user table
+	{
+  		$whichUserTableAs = "foreign_users";
+		$user_id = $user_id * -1;
+	}
+
+	//Gets the assignee name from the db
+	$sql = "SELECT f_name, l_name,email FROM ".$whichUserTableAs." WHERE user_id='$user_id'";
+	
+	if($result = $db->perform_looping_query($sql))
+	{
+		$row = $db->get_next_row($result);
+
+		$the_user->f_name = $row["f_name"];
+		$the_user->l_name = $row["l_name"];
+		$the_user->email = $row["email"];
+	}
+	else
+	{
+		$the_user->f_name = "";
+		$the_user->l_name = "";
+		$the_user->email = "";
+	}
+
+	return $the_user;	
+}
+
+?>

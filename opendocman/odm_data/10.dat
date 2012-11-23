@@ -1,0 +1,57 @@
+<?
+/******************************************************************************
+Epiware: Project and Document Management
+http://www.epiware.com
+Copyright (C) 2006 James Kern
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version. 
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details. 
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+Epiware, Inc. and Praxis Inc, hereby disclaims all copyright
+interest in the program 'Epiware' written
+by James Kern, Edward Kline, Ryan Gilfether, Ray Gorospe, Patrick Waddingham
+
+06 September 2006
+James Kern, President of Epiware 
+Jack Chapman, President of Praxis
+*****************************************************************************/ 
+	include("./prepend.php");
+	include("./attachments_user_docs_class.inc.php");
+
+	$doc_id = 0;
+	$deleted = false;
+
+	if(isset($_POST["docid"]) && $_POST["docid"]>0)
+	{
+		$doc_id = $_POST["docid"];
+		$obj = return_object(attachments_user_docs::get($doc_id,$db),true);
+
+		if(is_object($obj))
+		{
+			$deleted = attachments_user_docs::delete($obj,$user_id,$db);
+		}
+	}
+
+	if($deleted)
+	{
+		header("Content-type: text/xml");
+		echo"<?xml version='1.0' encoding='UTF-8'?><result><deleteresult success='1' docid='".$doc_id."'></deleteresult></result>";
+	}
+	else
+	{
+		header("Content-type: text/xml");
+		echo"<?xml version='1.0' encoding='UTF-8'?><result><deleteresult success='0'><![CDATA[";
+		print "Error: A database error occurred and the file ".$obj->real_name." was not deleted.\n".$db->last_sql."]]></deleteresult></result>";
+	}
+?>

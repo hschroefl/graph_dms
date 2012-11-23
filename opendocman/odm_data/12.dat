@@ -1,0 +1,84 @@
+<?
+/******************************************************************************
+Epiware: Project and Document Management
+http://www.epiware.com
+Copyright (C) 2006 James Kern
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version. 
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details. 
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+Epiware, Inc. and Praxis Inc, hereby disclaims all copyright
+interest in the program 'Epiware' written
+by James Kern, Edward Kline, Ryan Gilfether, Ray Gorospe, Patrick Waddingham
+
+06 September 2006
+James Kern, President of Epiware 
+Jack Chapman, President of Praxis
+*****************************************************************************/ 
+require("./module_prepend.php");
+
+$web_page = new epi_web_page($group_id,$db);
+
+$web_page->javascript_links["x_core"] = "./x/x_core.js";
+$web_page->javascript_links["x_dom"] = "./x/x_dom.js";
+$web_page->javascript_links["x_event"] = "./x/x_event.js";
+$web_page->javascript_links["x_drag"] = "./x/x_drag.js";
+
+
+$web_page->javascript_links["prototoype"] = "./js/scriptaculous/lib/prototype.js?&v=1.5";
+$web_page->javascript_links["class-extend"] = "./js/class-extend.js?&v=1.0";
+$web_page->javascript_links["v_popup"] = "./js/janda_js_popup.js?&v=2.5";
+$web_page->javascript_links["file_attachment"] = "./js/file_attachment.js?&v=0.1";
+$web_page->javascript_links["attachments_example"] = "./js/attachments_example.js?&v=0.1";
+
+$web_page->css_links["js_popup"] = "./css/janda_js_popup.css?&v=2.5";
+
+
+include("./mrc_header.php");
+$site_map_array = array(1 => "<a href=\"./index_resources.php\">Resources</a>");
+
+$external_id = $_POST["external_id"]?$_POST["external_id"]:($_GET["external_id"]?$_GET["external_id"]:0);
+
+if($external_id == 0)
+{
+	$site_map_array[] = "New Whatever";
+}
+else
+{
+	$site_map_array[] = "Whatever #".$serial_number;
+}
+
+site_map::draw($site_map_array);
+?>
+<form name="yourForm" action="./somepage.php" onsubmit="return false" method="post">
+<input type="hidden" name="external_id" id="external_id" value="<?=$serial_number?>" /><!-- external_id is for attachments -->
+</form>
+<table border="0" cellpadding="0" cellspacing="0" class="attachmentTable" id="attachmentTable">
+	<tr>
+		<td align="left" valign="top" width="30%">
+		<div class="printButton" id="attachmentinfotd">
+		<button type="button" id="attachmentBtn" name="attachBtn" class="printButton" title="Add Attachement">Add Attachment</button>
+		</div>
+		</td>
+		<td align="left" valign="top" width="70%">
+		<strong>Attachments</strong>
+		<div id="attachmentList">
+		&nbsp;
+		</div>
+		</td>
+	</tr>
+</table>
+<?
+include("./mrc_footer.php");
+?>

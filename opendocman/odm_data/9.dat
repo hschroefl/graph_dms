@@ -1,0 +1,87 @@
+<?
+/******************************************************************************
+Epiware: Project and Document Management
+http://www.epiware.com
+Copyright (C) 2006 James Kern
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version. 
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details. 
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+Epiware, Inc. and Praxis Inc, hereby disclaims all copyright
+interest in the program 'Epiware' written
+by James Kern, Edward Kline, Ryan Gilfether, Ray Gorospe, Patrick Waddingham
+
+06 September 2006
+James Kern, President of Epiware 
+Jack Chapman, President of Praxis
+*****************************************************************************/ 
+require_once("./module_prepend.php");
+require_once("./file_upload_class.inc.php");
+
+if(!isset($to_delete))
+{
+	print"you should not be here!!!";
+	exit;
+}
+else
+{
+/*******************************************************
+*  plan to use this page to process attachmetn deletes 	
+*  for newsroom, calendar and forum seeing as how those 
+*  sections do not already have a way to delete/edit the
+*  attachments. This switch will determine which type	
+*  of attachemnt to delete.								
+/******************************************************/
+	switch($to_delete)
+	{
+		case "newsroom":
+			$parent = "-9803";
+			if(uploaded_file::delete($doc_id,$group_id,$parent,$db)) // if delete db entries returns true
+			{
+				/*
+				$result = uploaded_file::get($doc_id,$db);
+				$row = $db->get_next_row($result);
+				print "<pre>";
+				print_r($row);
+				print "</pre>";
+				$file_path = $row['storage_location']."/".$group_id."/".$row['name'];
+				print"file -> ".$file_path."<br>";
+				if(file_exists($file_path))
+				{
+					print"FILE EXISTS! DO DELETE!";
+				}
+				*/
+				$fwd_url = create_url("epi_news_form.php","news_id=".$news_id);
+				header("location:".$fwd_url."");
+			}
+			break;
+		
+		case "forum":
+			$parent = "-9802";
+			if(uploaded_file::delete($pass_doc_id,$group_id,$parent,$db)) // if delete db entries returns true
+			{
+				$fwd_url = create_url("forum_display.php","id=".$id."&topic=".$topic."&topic_url=".$topic_url);
+				header("location:".$fwd_url."");
+			}
+			break;
+		
+		case "calendar":
+			break;
+		
+		default:
+			print "You should not be here!!!";
+			break;
+	}
+}
+?>

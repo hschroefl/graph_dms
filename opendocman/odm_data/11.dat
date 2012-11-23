@@ -1,0 +1,196 @@
+<?
+/******************************************************************************
+Epiware: Project and Document Management
+http://www.epiware.com
+Copyright (C) 2006 James Kern
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version. 
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details. 
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+Epiware, Inc. and Praxis Inc, hereby disclaims all copyright
+interest in the program 'Epiware' written
+by James Kern, Edward Kline, Ryan Gilfether, Ray Gorospe, Patrick Waddingham
+
+06 September 2006
+James Kern, President of Epiware 
+Jack Chapman, President of Praxis
+*****************************************************************************/ 
+require_once("./module_prepend.php");
+require_once('./attachments_user_docs_class.inc.php');
+require_once('./epi_lib_history.inc.php');
+$web_page = new epi_web_page($group_id,$db);
+$doc_id=$_GET["docid"]+0;
+
+if($doc_id > 0)
+{
+
+	$row = $db->get_next_row(attachments_user_docs::get($doc_id,$db));
+	if(is_array($row))
+	{
+		$name = $row["name"];
+		$real_name = $row["real_name"];
+		$doc_type = $row["doc_type"];
+		$doc_size = $row["doc_size"];
+		$storage_location = $row["storage_location"];
+
+	}
+
+
+
+		if($name == "")
+		{
+       	//begin the html output
+			$web_page->begin_page();
+			echo "
+			<table width=\"625\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
+				<tr>
+					<td align=\"left\" valign=\"top\">
+					<b class=\"red\">
+
+					</td>
+				</tr>
+			</table>
+			</div>
+			</body>
+			</html>
+			";
+	       exit;
+      }//end of if still not found
+
+
+
+
+		// MAC fix for limitation of file_namess, jk
+		if($HTTP_USER_AGENT=="")
+		{
+		   $agent=$HTTP_SERVER_VARS["HTTP_USER_AGENT"];
+		}
+		else
+		{
+		   $agent=$HTTP_USER_AGENT;
+		}
+
+		if($agent!="")
+		{
+		   //OK search for the string "MAC"
+		   //------------------------------
+		   // Just to rule out case sensitivity
+		   $agent=strtoupper($agent);
+		   //Will elimiate if MAC is at postion o
+		   if(is_string (strstr ($agent,"MAC")))
+			{
+		     // Get the file name..
+			  // MAC's can only have 31 characters..
+			  // 31-4=27 total 27 + 1  + 3
+			  //------------------------
+			  $position = strrpos( $real_name, "." );
+		     if($position != "")
+			  {
+		        $front = substr($real_name, 0, $position);
+		        $end = substr($real_name, $position);
+		     }
+			  else
+			  {
+		        $front =   $real_name;
+		        $end = "";
+		     }
+
+			  if(strlen($front)>=26)
+			  {
+				 $front=substr($front,0,26);
+			  }
+
+			  $real_name=$front . $end;
+
+		   }//end of if this is a MAC
+
+		}//end of if agent is set
+
+		  if($storage_location==""){
+		    //Use what is the current defualt storage locaiton...
+		    $storage_location=DOCUMENT_DIRECTORY;
+		  }
+
+
+
+	   $original_file = $storage_location   . "/$group_id/" . $name;
+		//Just change for the dowload...
+
+
+	   if(OS=="WIN"){
+		    $original_file = str_replace("/","\\",$original_file);
+	   }
+
+
+		$lives = (file_exists($original_file) && is_readable($original_file) && !is_dir($original_file));
+	   	if ($lives)
+		{
+		    $doc_size = filesize($original_file);
+	      //OK I know original exists build header and send down
+
+	      //okay.. copy_inser marks that the file was downloaded in the history records...
+		  	copy_insert($doc_id, $user_id, 13, $db, '0');
+
+			header ("Content-Type: $doc_type");
+			header("Content-Disposition: attachment; filename=$real_name");
+			header("Content-Length: ".$doc_size);
+			header("Content-Transfer-Encoding: binary");
+
+			$fp=fopen($original_file,"rb");
+			fpassthru($fp);
+			exit;
+	   }
+		else
+		{
+			 //begin the html output
+			$web_page->begin_page();
+
+			echo "
+			<table width=\"625\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
+				<tr>
+					<td align=\"left\" valign=\"top\">
+					<b class=\"red\">
+					Error: File ($original_file) not found.
+					</td>
+				</tr>
+			</table>
+			</div>
+			</body>
+			</html>
+			";
+	       exit;
+	   } //end of else file not found
+
+
+} //end of if doc_id provided
+else
+{
+	$web_page->begin_page();
+			echo "
+			<table width=\"625\" cellpadding=\"0\" cellspacing=\"0\" border=\"0\">
+				<tr>
+					<td align=\"left\" valign=\"top\">
+					<b class=\"red\">
+					Error: No attachment specified.
+					</td>
+				</tr>
+			</table>
+			</div>
+			</body>
+			</html>
+			";
+			exit;
+}
+
+?>

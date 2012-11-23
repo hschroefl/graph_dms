@@ -1,0 +1,441 @@
+<?
+/******************************************************************************
+Epiware: Project and Document Management
+http://www.epiware.com
+Copyright (C) 2006 James Kern
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version. 
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details. 
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+Epiware, Inc. and Praxis Inc, hereby disclaims all copyright
+interest in the program 'Epiware' written
+by James Kern, Edward Kline, Ryan Gilfether, Ray Gorospe, Patrick Waddingham
+
+06 September 2006
+James Kern, President of Epiware 
+Jack Chapman, President of Praxis
+*****************************************************************************/ 
+	require_once("./module_prepend.php");
+   include("./adv_admin_functions.inc.php");
+	$epi_translator->language_check(__FILE__,$db); 
+ 
+   error_reporting(0);
+   $update_permission = 0;
+   $group_access = 1;
+	   
+	 $c_user_id = $user_id;
+      
+
+
+
+
+
+     if(PROGRAM_MANAGER == 1) {
+       require("./role_set.php");
+       $role_set = new role_set($db,$user_id);
+     }
+
+
+	//$is_admin = is_admin($user_id,$db,$group_id);
+
+	//check to see if user belongs to group
+	//if there is at least on realm in the group to which the user belongs, he must
+	//belong to the group
+	$sql = "SELECT COUNT(*) as count FROM realm_user WHERE group_id=".$group_id." AND user_id=".$user_id;
+
+	$result = $db->perform_looping_query($sql);
+	$row = $db->get_next_row($result);
+	$count = $row["count"];
+
+	if($count < 1)
+	{
+		// $db->free_result_set($result);
+		
+            if(PROGRAM_MANAGER ==1 && (ROLE_ID == 1 || ROLE_ID == 2 || ROLE_ID == 3 || ROLE_ID == 7) ){
+               //Do nothing
+            } else {
+                $db->disconnect_db();
+                header("Location: epi_home.php");
+                exit;
+            }
+	}
+
+	
+
+    if(PROGRAM_MANAGER == 1){
+        if(ACCESS_PERMISSION == 0 ){
+         include("./no_access.php");
+          exit;
+       }
+    }
+ 
+ 
+     
+if($group_access == 1) {
+
+
+
+
+ $access = 0; 
+ if(isset($item_id)) { 
+    $enc_event_id = $event_id;    
+    if($item_id != "" ){
+       $access = 1;   
+    } else {
+       $access =0;
+    }
+ } else {
+   $access = 1;
+ }
+$the_item_id = $item_id;
+
+
+//begin the html output 
+$epi_html_helper->begin_html_page(&$priv,&$epi_translator);
+
+echo " 
+	<div align=center> 
+"; 
+
+//create a new menu and retrieve the default epiware menu 
+$epi_menu = new epiware_project_menu($group_id,$db); 
+if(!$epi_menu->add_sub_menu_by_name("epi_custom_modules",$db,false,$group_id))
+{
+	//put in the custom module menu
+	$menu = new sys_menus();
+	$menu->menu_name = "epi_custom_modules";
+	$menu->menu_id = 0;
+	$menu->use_under_bar = "y";
+
+	$menu->insert($db,false);
+
+	$epi_menu->add_sub_menu_by_name("epi_custom_modules",$db,false,$group_id);
+}
+
+//get the title bar across the top of the page 
+draw_module_title($group_id,$user_id,$is_root,$is_admin,&$db,"adv_admin_action.php");
+ 
+//draw the main epiware menu, passing the module(tab) name 
+//that is selected so that it will be highlighted 
+$epi_menu->align = "left"; 
+
+$epi_menu->draw($db,"epi_tasks");
+
+
+
+
+  $message = "<A href=\"JavaScript:history.back()\">";
+  $message .= "<font face=\"" . FONT_FACE . "\" color=\""  . MENU_FONT_ON .  "\" ><B>";   
+  $message .= epi_translate("back to previous page",__FILE__,$db);
+  $message .= "</b></font></a>";
+  $menu_title = "<b class=\"medtitle\">".epi_translate("tasks::action_items",__FILE__,$db)."</b>";  
+  print "<BR>";
+  print_menu_title($menu_title,300,$message);
+
+
+
+
+ 
+  $sql = "select user_id, ref_num, action_taken, assign_id, post_id, status, action, subject, unix_timestamp(assign_date) assign_date, unix_timestamp(due_date) due_date,priority,percent_complete FROM adv_action_items WHERE action_id=$item_id and group_id=$group_id"; 
+ $access = 0; 
+ if($result = $db->perform_looping_query($sql))
+ {
+ 	if($row = $db->get_next_row($result)) 
+	{
+       $access = 1;
+
+	   $ref_num = $row["ref_num"];
+       $item_description = $row["action"];
+       $subject = stripslashes($row["subject"]);
+       $assign_id = $row["assign_id"];
+       $status = $row["status"];
+       $init_date = $row["assign_date"];
+       $due_date = $row["due_date"];
+       $assigned_by = $row["assign_id"];
+	   $assigned_to = $row["user_id"];
+	   $action_taken = $row["action_taken"];
+         $action_taken = stripslashes($row["action_taken"]);
+		$priority = $row["priority"];
+		$percent_complete = $row["percent_complete"];
+
+	   $post_by = $row["post_id"];
+	
+   }
+	$db->free_result_set($result);
+ }//end of if result
+ $page = "adv_admin_action_access.php";
+ $item_id = $crypt->WEB_encrypt($item_id);
+ $param = "item_id=\"".$item_id."\"";
+ $url=create_url($page,$param);
+ 
+?>
+
+ 
+
+
+<table width=625 border=0  cellspacing=0 cellpadding=0 >
+<?
+
+  
+
+ print "<tr bgcolor=\"ffffff\"><td bgcolor=\"ffffff\" width=100 valign=\"top\"><font color=\"" . TABLE_FONT_OFF . "\"  face=\"" . FONT_FACE . "\"  >";
+ print "<B><font color =". TITLE_BG_OFF .">".epi_translate("tasks::subject",__FILE__,$db,true,true,"ucwords").":</font></b></font></td><td colspan=3 valign=\"top\"><font color=\"" . TABLE_FONT_OFF . "\" face=\"" . FONT_FACE . "\"   >";
+
+ print "$subject &nbsp;";
+ print "</font></td></tr>";
+
+
+  print "<tr bgcolor=\"ffffff\"><td width=100 valign=\"top\"><font face=\"" . FONT_FACE . "\" color=\"" . TABLE_FONT_OFF . "\" >";
+  print "<B><font color =". TITLE_BG_OFF .">".epi_translate("tasks::reference",__FILE__,$db)." #: </font></b></font></td><td width=200 valign=\"top\"><font face=\"" . FONT_FACE . "\" color=\"" . TABLE_FONT_OFF . "\" >";
+
+ 	print $ref_num." &nbsp";
+
+	print "</font>";
+	print "</td><td width=100>&nbsp;</td><td width=200 valign=\"top\">&nbsp;</td></tr>";
+
+	print "<tr bgcolor=\"ffffff\"><td colspan=4>&nbsp;</td></tr>";
+
+  print "<tr bgcolor=\"ffffff\"><td width=100 valign=\"top\"><font face=\"" . FONT_FACE . "\" color=\"" . TABLE_FONT_OFF . "\" >";
+  print "<B><font color =". TITLE_BG_OFF .">".epi_translate("tasks::status",__FILE__,$db,true,true,"ucwords").":</font></b></font></td><td width=200 valign=\"top\"><font face=\"" . FONT_FACE . "\" color=\"" . TABLE_FONT_OFF . "\" >";
+
+ if($access == 1) {
+    print "$status &nbsp;";
+ } else {
+    print "<font color =". TITLE_BG_OFF .">".epi_translate("tasks::access_denied",__FILE__,$db)."</font>";
+ }
+
+ 	print "</font></td>\n";
+	print "<td width=100 valign=\"top\">&nbsp;</td><td width=200 valign=\"top\">&nbsp;</td></tr>";
+
+
+	$result = $db->perform_looping_query("SELECT priority FROM adv_action_priority WHERE id=$priority");
+	$rw = $db->get_next_row($result);
+  print "<tr bgcolor=\"ffffff\"><td width=100 valign=\"top\"><font face=\"" . FONT_FACE . "\" color=\"" . TABLE_FONT_OFF . "\" >";
+  print "<B><font color =". TITLE_BG_OFF .">".epi_translate("tasks::priority",__FILE__,$db).": </font></b></font></td><td width=200 valign=\"top\"><font face=\"" . FONT_FACE . "\" color=\"" . TABLE_FONT_OFF . "\" >";
+  print $rw["priority"];
+  print "</FONT></TD>\n";
+	print "<td width=100 valign=\"top\">&nbsp;</td><td width=200 valign=\"top\">&nbsp;</td></tr>";
+
+  print "<tr bgcolor=\"ffffff\"><td width=100 valign=\"top\"><font face=\"" . FONT_FACE . "\" color=\"" . TABLE_FONT_OFF . "\" >";
+  print "<B><font color =". TITLE_BG_OFF .">".epi_translate("tasks::complete",__FILE__,$db).": </font></b></font></td><td width=200 valign=\"top\"><font face=\"" . FONT_FACE . "\" color=\"" . TABLE_FONT_OFF . "\" >";
+  print "$percent_complete%</FONT></TD>\n";
+	print "<td width=100 valign=\"top\">&nbsp;</td><td width=200 valign=\"top\">&nbsp;</td></tr>";
+
+	print "<tr bgcolor=\"ffffff\"><td colspan=4>&nbsp;</td></tr>"; 
+
+?>
+
+
+
+<?
+ 
+print "<TR bgcolor=\"ffffff\"><td valign=top width=100><font  color=\"" . TABLE_FONT_OFF . "\" face=\"" . FONT_FACE . "\" ><B><font color =". TITLE_BG_OFF .">".epi_translate("tasks::assigned_to",__FILE__,$db,true,true,"ucwords").":</font></b></font></TD>";
+print  "<td width=200 valign=\"top\"><font face=\"" . FONT_FACE . "\"  color=\"" . TABLE_FONT_OFF . "\" >";
+   
+		  if($access == 1)
+		  {
+			  if ($assigned_to > 0)
+			  	$table_to_use = "users";
+			  else if ($assigned_to < 0)
+			  {
+			  	$table_to_use = "foreign_users";
+				$assigned_to = $assigned_to * -1;
+			  }
+
+
+			$sql = "select user_id,l_name, f_name,email from ".$table_to_use." where user_id=$assigned_to  order by l_name";
+           
+			$result = $db->perform_looping_query($sql);
+			if($row = $db->get_next_row($result))
+			{
+				 $f_name = $row["f_name"];
+				$l_name = $row["l_name"];
+				$email = $row["email"];
+				$assigned_full_name = $f_name . " "  .  $l_name; 
+				print "<a href=\"mailto:$email\">";
+				print "$assigned_full_name</a>";
+			}
+			else
+			{
+				print "&nbsp;";
+			}
+			$db->free_result_set($result);
+		  }//end of if access ==1
+		  else
+		  {
+			 print "&nbsp;";
+		  }
+		  	
+          
+      
+ print "</font></td>"; 
+
+   print "<td width=100 valign=\"top\"><font face=\"" . FONT_FACE . "\"  color=\"" . TABLE_FONT_OFF . "\"><B><font color =". TITLE_BG_OFF .">".epi_translate("tasks::assigned_by",__FILE__,$db,true,true,"ucwords").":</font></b></font></td>";
+   print "<td width=200 valign=\"top\"><font face=\"" . FONT_FACE . "\" color=\"" . TABLE_FONT_OFF . "\">";
+      
+        if($access == 1)
+		  {
+			  if ($assigned_by > 0)
+			  	$table_to_use = "users";
+			  else if ($assigned_by < 0)
+			  {
+			  	$table_to_use = "foreign_users";
+				$assigned_by = $assigned_by * -1;
+			  }
+
+
+          $sql = "select user_id,l_name,f_name,email from ".$table_to_use." where user_id=$assigned_by  order by l_name";
+           
+          $result = $db->perform_looping_query($sql);
+          if($row = $db->get_next_row($result)) {
+             $f_name = $row["f_name"];
+             $l_name = $row["l_name"];
+			 $email = $row["email"];
+             $full_name = $f_name . " "  .  $l_name;
+             print "<a href=\"mailto:$email\">$full_name</a>"; 
+           } else {
+             print "&nbsp;";
+           }
+          $db->free_result_set($result);
+       } else {
+          print "&nbsp;";
+       }
+     ?>
+    </font>  
+    </td></tr>    
+  
+  
+       
+   <?
+   print "<TR bgcolor=\"ffffff\"><td valign=top width=100><font color=\"" . TABLE_FONT_OFF . "\" face=\"" . FONT_FACE . "\" ><B><font color =". TITLE_BG_OFF .">".epi_translate("tasks::due_on",__FILE__,$db).":</font></b></font></TD>";
+   print "<td width=200 valign=\"top\"><font face=\"" . FONT_FACE . "\" color=\"" . TABLE_FONT_OFF . "\"  >";
+   
+        if($access == 1) {
+            print date("M d, Y",$due_date);
+
+         } else {
+            print "&nbsp";
+         }
+
+      
+   print "</font>";
+
+   print "</td><td valign=top width=100><font face=\"" . FONT_FACE . "\" color=\"" . TABLE_FONT_OFF . "\" ><B><font color =". TITLE_BG_OFF .">".epi_translate("tasks::assigned_on",__FILE__,$db).":</font></b></font></TD>";
+   print "<td width=200 valign=\"top\"><font face=\"" . FONT_FACE . "\"  color=\"" . TABLE_FONT_OFF . "\" >";
+      
+
+        if($access == 1) {
+            print date("M d, Y",$init_date);            
+         } else {
+            print "&nbsp";
+         }
+      
+      ?>
+     </font>
+   </td>
+</tr>
+
+
+<?
+ print "<tr bgcolor=\"ffffff\"><td   colspan=4>&nbsp;</td></tr>";
+ print "<tr bgcolor=\"ffffff\"><td><font color=\"" . TABLE_FONT_OFF . "\" face=\"" . FONT_FACE . "\" ><b>";
+ print "<font color =". TITLE_BG_OFF .">".epi_translate("tasks::Description",__FILE__,$db).":</font></b></font></td><td colspan=3 valign=\"top\"><font color=\"" . TABLE_FONT_OFF . "\" face=\"" . FONT_FACE . "\" >";
+
+  if($item_description == "")
+	print "&nbsp;";
+  print $item_description; 
+
+  print "</td></tr>";
+
+  print "<tr bgcolor=\"ffffff\"><td   colspan=4>&nbsp;</td></tr>";
+
+ print "<tr bgcolor=\"ffffff\"><td><font color=\"" . TABLE_FONT_OFF . "\" face=\"" . FONT_FACE . "\" ><b>";
+ print "<font color =". TITLE_BG_OFF .">".epi_translate("tasks::closure_action",__FILE__,$db).":</font></b></font></td><td colspan=3 valign=\"top\"><font color=\"" . TABLE_FONT_OFF . "\" face=\"" . FONT_FACE . "\" >";
+
+if(($action_taken=="") || ($action_taken==" "))
+	print "&nbsp;";
+ print $action_taken;
+
+
+?>
+
+ </font></td></tr>
+ <?
+
+	print "<TR bgcolor=\"ffffff\">\n";
+	print "<TD COLSPAN=4>&nbsp;</td>\n";
+	print "</TR>\n";
+	print "<TR bgcolor=\"ffffff\">\n";
+	print "<TD COLSPAN=4><font color=\"" . TITLE_BG_OFF . "\" face=\"" . FONT_FACE . "\" ><b>".epi_translate("tasks::attachments",__FILE__,$db).":</font></b></font></td>\n";
+	print "</TR>\n";
+	print "<TR bgcolor=\"ffffff\">\n";
+	print "<TD COLSPAN=4>\n";
+	print "<TABLE BORDER=0 CELLSPACING=5 CELLPADDING=0>\n";
+
+ 	$result = $db->perform_looping_query("SELECT doc_id FROM adv_action_attachments WHERE action_id=".$crypt->WEB_decrypt($item_id));
+	while($rw = $db->get_next_row($result))
+	{
+		$rslt= $db->perform_looping_query("SELECT real_name,doc_size FROM user_docs WHERE doc_id=".$rw["doc_id"]);
+		$row = $db->get_next_row($rslt);
+
+		print "<TR>";
+		print "<TD><A HREF=\"verify_owner_2.php?doc_id=".$crypt->WEB_encrypt($rw["doc_id"])."\"><IMG SRC=\"images/ukn.gif\" BORDER=0>".$row["real_name"]."</A></TD>";
+		print "<TD><I><FONT SIZE=2>".($row["doc_size"]/1000)."K</FONT></I></TD>";
+		print "</TR>\n";
+
+	}
+
+	print "</TABLE>\n";
+	print "</TD>\n";
+	print "</TR>\n";
+
+	print "<TR bgcolor=\"ffffff\"><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td align=\"right\">";
+    if( ($is_admin) || ($c_user_id==$post_id) || ($c_user_id == $assigned_by) || ($c_user_id == $assigned_to) )
+	{
+            if(PROGRAM_MANAGER == 1 && ACCESS_PERMISSION == 1) {
+               print "&nbsp;";
+           } else {      
+  		 print "<font face=\"" . FONT_FACE . "\"><A href=\"$url\"><b>".epi_translate("tasks::edit_task",__FILE__,$db,true,true,"strtoupper")."</b></A></font>";
+           }
+ 
+	}
+	else
+	{
+		print "&nbsp;";
+	}
+?>
+ </td></tr>
+ 
+</table>
+
+ 
+
+<BR>
+
+
+
+
+  
+<? 
+  
+ } 
+
+draw_footer(); 
+include_once("./epi_append.php");
+?>
+</div>
+</body>
+</html>
+
+

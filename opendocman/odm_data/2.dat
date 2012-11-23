@@ -1,0 +1,199 @@
+Epiware v4.8.5
+
+* Run the "install" script.
+* It checks to see of your are super user right now
+
+
+
+* For new installs no longer have to create directory /usr/share/antiword
+* For shared hosted installs now create the document area
+* and binary area off of your /home/myaccount dir
+
+* You can install manually... 
+
+mkdir /home/myaccount/storage
+mkdir /home/myaccount/storage/document_area
+mkdir /home/myaccount/storage/binaries
+
+cp -r  Epiware_4.8.5/binaries/*  /home/myaccount/storage/binaries
+chmod -R 777 /home/myaccount/storage
+
+* The issues will be applying permissions so that apache
+* can write to this directory as well as execute programes
+* Will all depend on your hosted service..
+* apache process might be owned by nobody or apache..
+* You will need to change accordingly
+
+chown -R nobody /storage
+chmod -R 711 /storage
+chmod -R +x /storage/binaries
+
+OR.. 
+chmod -R 777 /storage
+
+* next update the config.inc.php file..
+* to point to these new locations.
+
+  define("BINARY_LOCATION", "/home/myaccount/storage/binaries");
+
+  define("DOCUMENT_DIRECTORY","/home/myaccount/storage/document_area");   
+  define("CALENDAR_ATTACHMENT_DIRECTORY","/home/myaccount/storage/attachments");
+  define("IMAGE_GALLERY_PATH","/home/myaccount/storage/document_area");
+  define("ERROR_LOG_PATH", "/home/myaccount/storage/document_area");
+  define("EPI_BANNER_DIRECTORY","/home/myaccount/storage/document_area");
+
+
+
+Upgrading from versions less than 4.7.5
+=====================================
+* There is a database change 1 table added!
+* You must issue following table into your database
+
+CREATE TABLE `token` (
+  `token_id` int(11) NOT NULL auto_increment,
+  `token_data` char(64) NOT NULL,
+  `num_of_uses` int(11) NOT NULL default '0',
+  `time_of_death` datetime NOT NULL default '0000-00-00 00:00:00',
+  `user_id` int(11) NOT NULL default '0',
+  `group_id` int(11) NOT NULL default '0',
+  `time_created` datetime NOT NULL default '0000-00-00 00:00:00',
+  PRIMARY KEY  (`token_id`)
+) ENGINE=MyISAM DEFAULT CHARSET=latin1;
+
+
+* Upgrade all files except config.inc.php and index.php
+
+
+Example upgrade actions.
+cp -r Epiware_4.8.0/epi  /var/www/html/epi_new
+
+cp /var/www/html/epi/config.inc.php /var/www/html/epi_new
+cp /var/www/html/epi/index.php /var/www/html/epi_new
+
+Then test the new release 
+www.mycompany.com/epi_new
+
+Once looks good.. make back up of old and
+mv epi_new epi
+
+
+
+
+
+
+
+
+
+
+
+
+Installation
+============
+
+Download and install the lastest MySQL          http://www.mysql.com
+Download and install the lastest APACE          http://www.apache.org
+Download and install the lastest PHP            http://www.php.net
+
+
+Unzip and untar the file Epiware-***.tar.gz     tar xvfz Epiware-***.tar.gz
+Change into the Epiware-*** directory           cd Epiware*
+Login as root                                   su
+Run the install script                          ./install
+
+
+Install does 3 important steps.
+1. Create a dir called /storage/document_area
+2. Copies binaries to /storage/binaries
+3. Copies share/antiword to /usr/share/antiword
+
+You can change the location /storage/document_area.
+If you change this location, you must 
+tell the application to look in this new location 
+in the config.inc.php.
+You will need to update each of the folowing, to where 
+documents will be stored, if different.
+
+  define("DOCUMENT_DIRECTORY","/storage/document_area"); 
+  define("CALENDAR_ATTACHMENT_DIRECTORY","/storage/attachments");
+  define("IMAGE_GALLERY_PATH","/storage/document_area");
+  define("ERROR_LOG_PATH", "/storage/document_area");
+  //a document area for wiki-group banners - unlike document area, this cannot be changed w/o moving all files at a later date
+  define("EPI_BANNER_DIRECTORY","/storage/document_area");
+
+
+Likewise if you change the location of the binaries you will also
+need to update the config.inc.php variable
+
+   define("BINARY_LOCATION", "/storage/binaries");
+
+
+Make sure you chance this to anything other than what is delivered.
+This makes the encryption on your URL unique
+  
+  define("KEY", "my_unique_key_example");
+
+
+/****************************************************************************/
+/*                                                                          */
+/* 1. Create tables in the Database with project_db.sql!                    */
+/*    mysql -u root -p < epi/project_db.sql                                 */
+/*                                                                          */
+/*                                                                          */
+/* 2. Copy recursively the files in from epi to your webserver              */
+/*     example (cp -r epi  /usr/local/apache/htdocs)			    */
+/*                                                                          */
+/****************************************************************************/
+
+
+
+EPIware should not be running on your machine.
+
+
+ 
+You can remove the EPIware installation directory.
+
+
+NOTES:
+- The first person that logs into Epiware 
+  will be the ROOT user.  He has full control of the applicaiton.
+  Other users can also be designated as root after they are created.
+   
+- By default, php expects to find the mysql.sock file at /tmp/mysql.sock
+  If your mysql.sock file is located in another directory, you will have 
+  to edit the EPIware configuration file (./config.inc.php).
+  Edit the line that contains 'define( "IP_ADDRESS","localhost");' to
+  'define( "IP_ADDRESS","localhost:/path/to/mysql.sock");' where
+  /path/to/mysql.sock is the complete path to your mysql.sock file.
+
+ - Source code to GNU software used by EPIware is located in the src directory.
+
+
+
+
+COPYRIGHT AND ACKNOWLEDGEMENTS
+==================================================================
+Epiware does not claim to have written or modified any of the following 
+software packages.  The source code is also included with the Epiware
+distribution for each package that requires it. 
+
+
+
+GLIMPSE 
+------------------------------------------------------------------
+This product includes software that can be located at (http://www.webglimpse.net/).
+ 
+
+ANTIWORD GPL LICENSED SOFTWARE 
+-------------------------------------------------------------------
+This product includes antiword software that can be located at 
+(http://www.winfield.demon.nl/) and licensed under GPL 
+(http://www.gnu.org/copyleft/gpl.html). Antiword has not been modified, 
+and its source is located in the directory /EPIware(realease#)/binaries/src/.   
+
+
+XPDF GPL (VERSION 2) LICENSED SOFTWARE
+-------------------------------------------------------------------
+This product includes xpdf software that can be located at 
+(http://www.foolabs.com/xpdf/about.html) and licensed under GPL version 2. 
+Xpdf has not been modified, and the documentation, README, and COPYING 
+files are located in the directory /EPIware(realease#)/binaries/src/.   

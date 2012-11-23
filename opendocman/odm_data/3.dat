@@ -1,0 +1,90 @@
+#!/bin/bash
+
+
+
+
+# ok start installing
+echo "Installing Epiware ..."
+
+
+
+#----------------------------------------------------
+# make the storage directory if it does not exist
+# change the owner of /storage to that of nobody
+# so that apache can write to it
+#---------------------------------------------------
+if [ !  -d /storage ]
+then
+    mkdir /storage
+    if [ ! -d /storage/document_area ]
+    then
+        mkdir /storage/document_area
+    fi
+fi
+if [ ! -d /storage/document_area ]
+   then
+     mkdir /storage/document_area
+fi
+if [ !  -d /storage/binaries ]
+   then
+   mkdir /storage/binaries
+fi 
+
+
+chown -R nobody /storage
+chmod -R 711 /storage
+chmod -R +x /storage/binaries
+
+
+
+
+
+
+#----------------------------------------------------
+# GOING TO INSTALL 5 BINARIES IN  directory
+# /storaeg/binaries
+#---------------------------------------------------
+cp binaries/antiword /storage/binaries
+cp binaries/pdftotext  /storage/binaries
+cp binaries/glimpse /storage/binaries
+cp binaries/glimpseindex  /storage/binaries
+cp binaries/glimpseserver /storage/binaries
+cp binaries/8859-1.txt /storage/binaries
+
+
+
+#----------------------------------------------------
+# GOING TO MAKE SURE 5 BINARIES ARE EXECUTABLE IN
+# /storage/binaries
+#---------------------------------------------------
+chmod +x /storage/binaries/antiword
+chmod +x /storage/binaries/pdftotext
+chmod +x /storage/binaries/glimpse
+chmod +x /storage/binaries/glimpseindex
+chmod +x /storage/binaries/glimpseserver
+
+
+
+chown -R nobody /storage
+chmod -R 700 /storage 
+
+
+
+
+echo "/****************************************************************************/"
+echo "/*                                                                          */"
+echo "/*      YOU MUST COMPLETE THE FOLLOWING 2 STEPS MANUALLY                    */"
+echo "/*                                                                          */"
+echo "/****************************************************************************/"
+echo "/*                                                                          */"
+echo "/* 1. Create tables in the Database with project_db.sql!                    */"
+echo "/*    mysql -u root -p < epi/project_db.sql			          */"
+echo "/*                                                                          */"        
+echo "/*                                                                          */"
+echo "/* 2. Copy recursively the files in htdocs  to your webserver               */"
+echo "/*     (following assumes server path is '/usr/local/apache/')              */"
+echo "/*     example (cp -r epi /usr/local/apache/htdocs/epi)                     */" 
+echo "/*                                                                          */"
+echo "/*                                                                          */"
+echo "/****************************************************************************/"
+

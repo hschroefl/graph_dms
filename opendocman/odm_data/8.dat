@@ -1,0 +1,186 @@
+<?
+ /******************************************************************************
+Epiware: Project and Document Management
+http://www.epiware.com
+Copyright (C) 2006 James Kern
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version. 
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU General Public License for more details. 
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+
+Epiware, Inc. and Praxis Inc, hereby disclaims all copyright
+interest in the program 'Epiware' written
+by James Kern, Edward Kline, Ryan Gilfether, Ray Gorospe, Patrick Waddingham
+
+06 September 2006
+James Kern, President of Epiware 
+Jack Chapman, President of Praxis
+*****************************************************************************/ 
+$epi_translator->language_check(__FILE__,$db);  
+
+class adv_admin_header {         
+    // file_name is going to the actual name of the php file that is going
+    // going to used
+    var $index = 0;
+    var $group_status = 0;
+    function adv_admin_header($file_name,$db){	 
+	        //NICE FIX TO MAP PATH TO WIN from UNIX
+           $file_name=str_replace("\\","/",$file_name);
+           global $HTTP_COOKIE_VARS;
+           $cell_off_color = "#" . MENU_BG_OFF;
+           $cell_on_color= "#" . MENU_BG_ON;
+           $text_on_color = "#" . MENU_FONT_ON;
+           $text_off_color = "#" . MENU_FONT_OFF;
+           $table_width = "625";
+
+
+           $crypt = new EPI_CRYPT;
+           $temp = $HTTP_COOKIE_VARS["enc_group_id"];
+           $group_id = $crypt->WEB_decrypt($temp);
+
+
+           $temp = $HTTP_COOKIE_VARS["enc_user_id"];
+           $user_id = $crypt->WEB_decrypt($temp);
+
+
+           if($user_id == "") {
+              //---------------------------------------------------
+              //If my user_id is null send back to login screen
+              // user_id is more important than the group id
+              //---------------------------------------------------
+              // header("Location: expired.php");
+               exit;
+           }
+
+           if($group_id == "" ) {
+               header("Location: list_projects.php");
+               exit;
+           }
+
+  
+         $last = strrchr($file_name,"/");
+
+
+         $final_name = substr($last,1,-4);
+
+         //When putting the file name just drop the .php extension to make this stuff work
+         // This will be all of the different section for the time
+
+ 
+             $adv_admin_action = 0;
+             $adv_timeline = 1;
+             $adv_admin_search = 2;
+				 $max_buttons=2;
+
+
+         eval("\$index=\$$final_name;");
+
+                  $button_name = array($max_buttons);
+                  $button_ref = array($max_buttons);
+
+                  $button_name[0] = epi_translate("tasks",__FILE__,$db);
+                  $button_ref[0] = "adv_admin_action.php";
+
+                  $button_name[1] = epi_translate("timeline",__FILE__,$db);
+						if($final_name=="adv_admin_action"){
+                    $button_ref[1] = "JavaScript:draw_timeline()";
+						} else {
+						  $button_ref[1] = "adv_timeline.php";
+						}
+
+                   
+                  $button_name[2] = epi_translate("search",__FILE__,$db);
+                  $button_ref[2] = "adv_admin_search.php";
+				 						   
+
+
+		 
+
+        // OK now I have the index for the ehader
+        $temp = $table_width - (2*$max_buttons)*4;
+        $standard_cell = $temp/$max_buttons;
+
+
+		define("HIGHLIGHT_COLOR", "#000000");  
+		define("PRIMARY_COLOR",MENU_BG_ON);  
+		define("SECONDARY_COLOR",MENU_BG_ON);  
+
+	//%step : begin table with menu tabs
+    print "<table width=625 border=0 cellpadding=0 cellspacing=0>";
+
+    print "<tr><td HEIGHT=10 width=625 bgcolor=\"#" . SECONDARY_COLOR . "\" VALIGN=BOTTOM>";
+
+
+
+    print "<table  border=0 cellpadding=0 cellspacing=0>";                
+    print "<tr>";
+    print "<td valign=bottom align=\"CENTER\" bgcolor=\"#" . SECONDARY_COLOR . "\" width=20 height=1></td>";   
+    $tab_width=140;
+    while(list($key,$val)=each($button_ref))  {    
+	   if($key == $index) { 
+           $sides = HIGHLIGHT_COLOR;    
+           $inside = "ffffff";   
+         } else {
+           $sides = SECONDARY_COLOR;    
+           $inside = SECONDARY_COLOR;
+         }
+         
+         print "<td width=1 height=1 bgcolor=$sides></td>";
+         print "<td align=\"LEFT\" bgcolor=$sides width=$tab_width height=1>";   
+
+         print "</td>";
+         print "<td width=1 height=1 bgcolor=$sides></td>"; 
+    }
+    print "</tr>";
+
+    reset($button_ref);
+
+    print "<tr>";
+    print "<td valign=bottom align=\"CENTER\" bgcolor=\"#" . SECONDARY_COLOR . "\" width=20 height=1></td>";   
+    while(list($key,$val)=each($button_ref))  {    
+	   if($key == $index) { 
+           $sides = HIGHLIGHT_COLOR;    
+           $inside = "ffffff"; 
+           $font_color = MENU_FONT_OFF;  
+         } else {
+           $sides = SECONDARY_COLOR;    
+           $inside = SECONDARY_COLOR;
+           $font_color = MENU_FONT_ON;
+         }
+         print "<td valign=bottom width=1 bgcolor=$sides height=1></td>";
+         print "<td align=\"CENTER\" bgcolor=$inside width=$tab_width>";   
+         print  "<a href=$val>";
+         print "<font face=\"" . FONT_FACE . "\" color=$font_color ><b>";
+         print $button_name[$key] ;
+         print "</B></font>"; 
+         print "</a>";
+         print "</td>";
+         print "<td valign=bottom width=1 height=1 bgcolor=$sides></td>"; 
+    }
+    print "</tr>";
+    print "</table>";
+    print "</td></tr></table>";
+
+
+
+
+ 
+   }
+
+ 
+
+}//end of class
+
+ 
+
+?>
