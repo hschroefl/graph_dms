@@ -27,7 +27,7 @@ if( !defined('config') )
 
 // ** MySQL settings - You can get this info from your web host ** //
 /** The name of the database for [OpenDocMan */
-define('DB_NAME', 'opendocman');
+define('DB_NAME', 'graph_dms');
 
 /** MySQL database username */
 define('DB_USER', 'root');
